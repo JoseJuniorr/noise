@@ -4,7 +4,8 @@ WORKDIR /opt/app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
-ENV NODE_ENV=production
+# Em droplet de 1 GB o Node limita o heap pela RAM livre; com o swap, 2 GB é seguro.
+ENV NODE_ENV=production NODE_OPTIONS=--max-old-space-size=2048
 RUN npm run build && npm prune --omit=dev
 
 FROM node:24-alpine

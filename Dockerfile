@@ -10,8 +10,10 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # NEXT_PUBLIC_* entra no código do navegador durante o build, por isso é argumento de build.
 ARG NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+# Em droplet de 1 GB o Node limita o heap pela RAM livre; com o swap, 2 GB é seguro.
 ENV NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=$NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME \
-    NEXT_TELEMETRY_DISABLED=1
+    NEXT_TELEMETRY_DISABLED=1 \
+    NODE_OPTIONS=--max-old-space-size=2048
 RUN npm run build
 
 FROM node:24-alpine
