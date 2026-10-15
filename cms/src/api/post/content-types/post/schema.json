@@ -1,0 +1,48 @@
+{
+  "kind": "collectionType",
+  "collectionName": "posts",
+  "info": {
+    "singularName": "post",
+    "pluralName": "posts",
+    "displayName": "Registro",
+    "description": "Um registro do fluxo: texto, código, acorde ou foto. Sem categorias — o tipo muda só a forma."
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "writtenAt": {
+      "type": "datetime",
+      "required": true
+    },
+    "kind": {
+      "type": "enumeration",
+      "enum": ["text", "code", "chord", "photo"],
+      "default": "text",
+      "required": true
+    },
+    "title": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "title",
+      "required": true
+    },
+    "body": {
+      "type": "richtext"
+    },
+    "chordName": {
+      "type": "string"
+    },
+    "chordShape": {
+      "type": "string"
+    },
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"]
+    }
+  }
+}

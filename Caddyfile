@@ -1,0 +1,14 @@
+# HTTPS automático (Let's Encrypt) para o site e para o painel do Strapi.
+{$SITE_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy web:3000
+}
+
+{$CMS_DOMAIN} {
+	encode zstd gzip
+	# O painel aceita uploads de foto: o limite padrão do Strapi é 200 MB.
+	request_body {
+		max_size 200MB
+	}
+	reverse_proxy cms:1337
+}

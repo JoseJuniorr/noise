@@ -1,0 +1,80 @@
+# noise. no droplet: site (Next), CMS (Strapi), banco (Postgres) e HTTPS (Caddy).
+# Variáveis: copie .env.example para .env e preencha. Subir: docker compose up -d --build
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: strapi
+      POSTGRES_USER: strapi
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U strapi -d strapi"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  cms:
+    build: ./cms
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PUBLIC_URL: https://${CMS_DOMAIN:?defina CMS_DOMAIN no .env}
+      IS_PROXIED: "true"
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: strapi
+      DATABASE_USERNAME: strapi
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      APP_KEYS: ${APP_KEYS:?defina APP_KEYS no .env}
+      API_TOKEN_SALT: ${API_TOKEN_SALT:?}
+      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET:?}
+      TRANSFER_TOKEN_SALT: ${TRANSFER_TOKEN_SALT:?}
+      JWT_SECRET: ${JWT_SECRET:?}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?}
+      CLOUDINARY_NAME: ${CLOUDINARY_NAME:?defina CLOUDINARY_NAME no .env}
+      CLOUDINARY_KEY: ${CLOUDINARY_KEY:?}
+      CLOUDINARY_SECRET: ${CLOUDINARY_SECRET:?}
+
+  web:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_NAME}
+    restart: unless-stopped
+    depends_on:
+      - cms
+    environment:
+      CONTENT_SOURCE: ${CONTENT_SOURCE:-strapi}
+      STRAPI_URL: http://cms:1337
+      STRAPI_API_TOKEN: ${STRAPI_API_TOKEN:-}
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:?defina REVALIDATE_SECRET no .env}
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - web
+      - cms
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?defina SITE_DOMAIN no .env}
+      CMS_DOMAIN: ${CMS_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  postgres-data:
+  caddy-data:
+  caddy-config:

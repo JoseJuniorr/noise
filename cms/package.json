@@ -1,0 +1,41 @@
+{
+  "name": "cms",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CMS do noise. — registros do fluxo (Strapi 5)",
+  "scripts": {
+    "build": "strapi build",
+    "console": "strapi console",
+    "dev": "strapi develop",
+    "develop": "strapi develop",
+    "start": "strapi start",
+    "strapi": "strapi",
+    "upgrade": "npx @strapi/upgrade latest",
+    "upgrade:dry": "npx @strapi/upgrade latest --dry"
+  },
+  "dependencies": {
+    "@strapi/database": "5.57.0",
+    "@strapi/plugin-users-permissions": "5.57.0",
+    "@strapi/provider-upload-cloudinary": "^5.57.0",
+    "@strapi/strapi": "5.57.0",
+    "pg": "^8.23.1",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "react-router-dom": "^6.30.3",
+    "styled-components": "^6.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=20.0.0 <=26.x.x",
+    "npm": ">=6.0.0"
+  },
+  "strapi": {
+    "uuid": "6ddbcc31-e3eb-42b8-b525-cdb489bc178c",
+    "installId": "6d9a8bbe20d7ad841364f559b9b9ace3e8fc37564e81240e6a58df541b1c329c"
+  }
+}

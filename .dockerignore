@@ -1,0 +1,8 @@
+node_modules
+.next
+coverage
+cms
+.env*
+!.env.example
+.git
+*.log

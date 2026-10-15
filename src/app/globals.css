@@ -1,0 +1,289 @@
+@import "tailwindcss";
+
+/* Um tema só: um lugar à parte, à noite, com névoa. */
+:root {
+  --bg: #0e0e0c;
+  --surface: #171715;
+  --ink: #e9e4d8;
+  --muted: #8c877c;
+  --line: #2a2925;
+  --signal: #e5533a;
+  --noise-opacity: 0.05;
+  /* A foto emerge das sombras: em `screen`, o preto dela some e só a luz aparece. */
+  --photo-opacity: 0.72;
+  --photo-tone: grayscale(1) contrast(1.25) brightness(1.05) sepia(0.12);
+  /* Névoa clara sobre o escuro, e cantos que afundam no preto. */
+  --fog: rgb(233 228 216 / 0.05);
+  --vignette: rgb(0 0 0 / 0.6);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-signal: var(--signal);
+  --font-serif: var(--font-newsreader);
+  --font-mono: var(--font-plex-mono);
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-serif), Georgia, serif;
+  font-optical-sizing: auto;
+  /* A foto submersa sangra além da coluna; isso nunca pode virar scroll lateral. */
+  overflow-x: clip;
+}
+
+/* Grão de papel: estático (sem animação) e baixo o bastante para não pesar na leitura. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  opacity: var(--noise-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+::selection {
+  background: var(--signal);
+  color: var(--bg);
+}
+
+:focus-visible {
+  outline: 1px solid var(--ink);
+  outline-offset: 4px;
+}
+
+/* --- Névoa ------------------------------------------------------------- */
+
+/* Bancos de névoa à deriva, bem devagar, e uma vinheta que afunda as bordas. */
+.fog {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.fog::before {
+  content: "";
+  position: absolute;
+  inset: -25%;
+  background:
+    radial-gradient(38% 26% at 22% 30%, var(--fog), transparent 70%),
+    radial-gradient(30% 22% at 78% 64%, var(--fog), transparent 70%),
+    radial-gradient(55% 30% at 50% 100%, var(--fog), transparent 70%),
+    radial-gradient(25% 18% at 60% 18%, var(--fog), transparent 70%);
+  animation: fog-drift 90s ease-in-out infinite alternate;
+}
+
+.fog::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 85% 75% at 40% 40%, transparent 45%, var(--vignette));
+}
+
+@keyframes fog-drift {
+  from {
+    transform: translate3d(-4%, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(5%, -3%, 0) scale(1.08);
+  }
+}
+
+/* --- Foto submersa ----------------------------------------------------- */
+
+/*
+ * O fade da borda vem dos utilitários `mask-*` do Tailwind na própria
+ * instância; aqui ficam só o blend, o tom e o grão comuns a todas.
+ */
+.submerged {
+  overflow: hidden;
+  mix-blend-mode: screen;
+  /* Cada instância ajusta a força com --photo-strength sem perder o valor base. */
+  opacity: calc(var(--photo-opacity) * var(--photo-strength, 1));
+}
+
+.submerged-grain {
+  position: absolute;
+  inset: 0;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='d'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -4 3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23d)'/%3E%3C/svg%3E");
+}
+
+.submerged-media {
+  position: absolute;
+  inset: -4%;
+  filter: url(#submerso) var(--photo-tone);
+}
+
+/*
+ * Imersão em duas camadas da mesma foto: por trás, uma cópia bem desfocada
+ * ocupa tudo; por cima, a nítida só existe em volta do foco. Do centro para
+ * a borda a foto perde o foco antes de se desfazer no grão e na névoa.
+ */
+.submerged-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.submerged-layer--soft {
+  filter: blur(14px);
+  transform: scale(1.08);
+  opacity: 0.85;
+}
+
+/* Nítida no foco principal e, se houver, numa faixa estreita sobre um detalhe (--detail). */
+.submerged-layer--sharp {
+  mask-image:
+    radial-gradient(ellipse 62% 66% at var(--focus, 50% 50%), #000 38%, transparent 82%),
+    radial-gradient(ellipse 75% 12% at var(--detail, -200% -200%), #000 30%, transparent 85%);
+}
+
+/* Enquanto a foto não chega: luzes vistas através da água. */
+.submerged-haze {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 14% 42% at 40% 32%, rgb(255 255 255 / 0.85), transparent 70%),
+    radial-gradient(ellipse 9% 55% at 62% 22%, rgb(255 255 255 / 0.5), transparent 70%),
+    radial-gradient(ellipse 35% 18% at 50% 80%, rgb(255 255 255 / 0.35), transparent 70%),
+    radial-gradient(circle at 75% 60%, rgb(255 255 255 / 0.2), transparent 30%);
+  filter: blur(8px);
+}
+
+/* A foto de fundo emerge devagar, como se a névoa abrisse. */
+.emerge {
+  animation: emerge 3.2s cubic-bezier(0.2, 0.6, 0.2, 1) both;
+}
+
+@keyframes emerge {
+  from {
+    opacity: 0;
+    filter: blur(14px);
+  }
+}
+
+/* --- noise. (a introdução) --------------------------------------------- */
+
+.motto {
+  animation: surface 2.6s 0.5s cubic-bezier(0.2, 0.6, 0.2, 1) both;
+}
+
+@keyframes surface {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+    transform: translateY(0.4rem);
+  }
+}
+
+/* O ponto final — uma luz de gravação, respirando. */
+.motto-mark {
+  animation: breathe 5s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* noise: duas sombras desalinhadas, como interferência de fita; às vezes tremula. */
+.motto-noise {
+  text-shadow:
+    0.035em 0 0 color-mix(in oklab, var(--signal) 40%, transparent),
+    -0.025em 0 0 color-mix(in oklab, var(--ink) 18%, transparent);
+  animation: interference 9s steps(1) infinite;
+}
+
+@keyframes interference {
+  0%,
+  93%,
+  100% {
+    transform: none;
+  }
+  94% {
+    transform: translateX(0.025em) skewX(-3deg);
+  }
+  96% {
+    transform: translateX(-0.02em);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fog::before,
+  .emerge,
+  .motto,
+  .motto-mark,
+  .motto-noise {
+    animation: none;
+  }
+
+  /* Sem ondulação: a imagem fica parada, só dissolvida. */
+  .submerged-media {
+    filter: var(--photo-tone);
+  }
+}
+
+/* --- Corpo dos registros ---------------------------------------------- */
+
+/* O HTML chega pronto do adaptador (Markdown hoje, Strapi amanhã): o estilo mora aqui. */
+.entry-body {
+  max-width: 56ch;
+  font-size: 1.125rem;
+  line-height: 1.65;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.entry-body > * + * {
+  margin-top: 0.9em;
+}
+
+.entry-body--lead {
+  font-size: clamp(1.25rem, 2vw, 1.4rem);
+  color: color-mix(in oklab, var(--ink) 90%, transparent);
+}
+
+.entry-body--caption {
+  font-size: 1rem;
+  font-style: italic;
+}
+
+.entry-body a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklab, var(--signal) 60%, transparent);
+  text-underline-offset: 0.2em;
+}
+
+.entry-body blockquote {
+  padding-left: 1em;
+  border-left: 1px solid var(--line);
+  font-style: italic;
+}
+
+.entry-body :not(pre) > code {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 0.85em;
+  color: var(--ink);
+}
+
+/* Código sem caixa dura: o bloco se dissolve para a direita. */
+.entry-body pre {
+  max-width: 60ch;
+  overflow-x: auto;
+  padding: 1rem 2.5rem 1rem 1rem;
+  background: color-mix(in oklab, var(--surface) 70%, transparent);
+  color: var(--ink);
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  mask-image: linear-gradient(to right, #000 70%, transparent);
+}
