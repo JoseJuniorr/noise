@@ -251,6 +251,14 @@ body::after {
   color: color-mix(in oklab, var(--ink) 90%, transparent);
 }
 
+/* Na página do registro o texto é lido, não folheado: maior, mais claro, mais largo. */
+.entry-body--full {
+  max-width: 62ch;
+  font-size: clamp(1.15rem, 1.6vw, 1.3rem);
+  line-height: 1.75;
+  color: color-mix(in oklab, var(--ink) 88%, transparent);
+}
+
 .entry-body--caption {
   font-size: 1rem;
   font-style: italic;
