@@ -2,9 +2,12 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { site } from "@/config/site";
+import { getPassageCounts } from "@/infrastructure/passages";
 import { getAllPosts, getPostBySlug } from "@/infrastructure/posts";
 import { Backdrop } from "@/presentation/components/backdrop";
+import { PassageMark } from "@/presentation/components/passage-mark";
 import {
   AFTER_THREAD,
   PostBody,
@@ -75,10 +78,17 @@ async function PostEntry({ params }: Pick<PageProps<"/registros/[slug]">, "param
         </div>
       </div>
 
+      {/* A contagem muda a cada visita; o texto acima segue em cache. */}
+      <div className={`${AFTER_THREAD} mt-16`}>
+        <Suspense fallback={null}>
+          <Passages slug={post.slug} />
+        </Suspense>
+      </div>
+
       {/* Continuar pelo fluxo: para trás no tempo, para frente, ou de volta ao começo. */}
       <nav
         aria-label="Fluxo de registros"
-        className={`${AFTER_THREAD} mt-28 grid gap-6 font-mono text-xs lowercase tracking-[0.15em] text-muted sm:grid-cols-3`}
+        className={`${AFTER_THREAD} mt-20 grid gap-6 font-mono text-xs lowercase tracking-[0.15em] text-muted sm:grid-cols-3`}
       >
         <div>{older && <FlowLink post={older} direction="older" />}</div>
         <Link href={`/#${post.slug}`} className="transition-colors hover:text-ink sm:text-center">
@@ -89,6 +99,13 @@ async function PostEntry({ params }: Pick<PageProps<"/registros/[slug]">, "param
       </nav>
     </>
   );
+}
+
+/** "Passei por aqui" — a contagem é lida no acesso, fora do cache do registro. */
+async function Passages({ slug }: { slug: string }) {
+  await connection();
+  const counts = await getPassageCounts([slug]);
+  return <PassageMark slug={slug} initialCount={counts[slug] ?? 0} />;
 }
 
 function FlowLink({

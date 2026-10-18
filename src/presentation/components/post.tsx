@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Post } from "@/core/domain/post";
 import { formatDiaryDate } from "@/presentation/format/diary-date";
 import { splitLead } from "@/presentation/format/lead";
+import { passageLabel } from "@/presentation/format/passages";
 import { SubmergedPhoto } from "./submerged-photo";
 
 /*
@@ -24,7 +25,16 @@ export function postMomentLabel(publishedAt: string): string {
  * Data (e hora, quando houver) na margem, com um ponto sobre o fio marcando
  * o instante. Com `href`, a data é o link permanente do registro — como num diário.
  */
-export function PostMoment({ publishedAt, href }: { publishedAt: string; href?: string }) {
+export function PostMoment({
+  publishedAt,
+  href,
+  passages = 0,
+}: {
+  publishedAt: string;
+  href?: string;
+  /** Marcas "passei por aqui" — aparecem só quando existem. */
+  passages?: number;
+}) {
   const time = publishedAt.slice(11, 16);
   const moment = (
     <time dateTime={publishedAt}>
@@ -46,6 +56,15 @@ export function PostMoment({ publishedAt, href }: { publishedAt: string; href?: 
           </Link>
         ) : (
           moment
+        )}
+        {passages > 0 && (
+          <span title={passageLabel(passages)} className="ml-3 opacity-60 sm:mt-1 sm:ml-0 sm:block">
+            <span aria-hidden className="text-signal/70">
+              ◼
+            </span>{" "}
+            <span aria-hidden>{passages}</span>
+            <span className="sr-only">{passageLabel(passages)}</span>
+          </span>
         )}
       </p>
     </>

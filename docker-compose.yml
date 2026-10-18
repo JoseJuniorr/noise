@@ -50,11 +50,14 @@ services:
     restart: unless-stopped
     depends_on:
       - cms
+      - postgres
     environment:
       CONTENT_SOURCE: ${CONTENT_SOURCE:-strapi}
       STRAPI_URL: http://cms:1337
       STRAPI_API_TOKEN: ${STRAPI_API_TOKEN:-}
       REVALIDATE_SECRET: ${REVALIDATE_SECRET:?defina REVALIDATE_SECRET no .env}
+      # Marcas "passei por aqui": mesmo Postgres, schema próprio (noise).
+      PASSAGES_DATABASE_URL: postgres://strapi:${POSTGRES_PASSWORD}@postgres:5432/strapi
 
   caddy:
     image: caddy:2-alpine

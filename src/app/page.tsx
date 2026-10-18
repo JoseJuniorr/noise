@@ -1,6 +1,7 @@
 import { Suspense, type CSSProperties } from "react";
 import { connection } from "next/server";
 import { site } from "@/config/site";
+import { getPassageCounts } from "@/infrastructure/passages";
 import { getAllPosts } from "@/infrastructure/posts";
 import { Backdrop } from "@/presentation/components/backdrop";
 import { AFTER_THREAD, PostBody, PostMoment, THREAD_X, postHref } from "@/presentation/components/post";
@@ -55,6 +56,8 @@ export default function Home() {
 async function Feed() {
   await connection();
   const posts = await getAllPosts();
+  // As marcas mudam a cada visita: ficam fora do cache dos registros.
+  const passages = await getPassageCounts(posts.map((post) => post.slug));
 
   if (posts.length === 0) {
     return <p className={`${AFTER_THREAD} mt-12 italic text-muted`}>silêncio, por enquanto.</p>;
@@ -89,7 +92,11 @@ async function Feed() {
                 {days} dias
               </span>
             )}
-            <PostMoment publishedAt={post.publishedAt} href={postHref(post.slug)} />
+            <PostMoment
+              publishedAt={post.publishedAt}
+              href={postHref(post.slug)}
+              passages={passages[post.slug]}
+            />
             <div className={AFTER_THREAD}>
               <PostBody post={post} mode="feed" />
             </div>
