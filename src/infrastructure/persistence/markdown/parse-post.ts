@@ -1,5 +1,6 @@
 import { parse as parseYaml } from "yaml";
-import { InvalidPostError, POST_KINDS, type Post, type PostKind } from "@/core/domain/post";
+import { parseImageTreatment } from "@/core/domain/image-treatment";
+import { InvalidPostError, POST_KINDS, type ImageRef, type Post, type PostKind } from "@/core/domain/post";
 import { renderMarkdown } from "../render-markdown";
 
 const FRONT_MATTER = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/;
@@ -15,7 +16,10 @@ const PUBLISHED_AT = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$/;
  * kind: chord          # text (padrão) | code | chord | photo
  * title: opcional
  * chord: Dadd9         # só em chord, com `shape` opcional
- * image: noise/ensaio  # só em photo: id público no Cloudinary, com `alt`
+ * image: noise/ensaio  # id no Cloudinary; obrigatória em photo (com `alt`), opcional nas demais
+ * filter: sepia        # submersa (padrão) | natural | preto_e_branco | sepia | alto_contraste | vinheta
+ * ratio: quadrado      # original (padrão) | quadrado | retrato | paisagem | panoramico
+ * focus: rosto         # automatico (padrão) | rosto | centro | topo | base
  * ---
  * Corpo em Markdown.
  * ```
@@ -51,11 +55,22 @@ export function parsePost(slug: string, source: string): Post {
     throw new InvalidPostError(slug, `"kind" deve ser um de ${POST_KINDS.join(", ")}, veio "${kind}"`);
   }
 
+  // Imagem em qualquer forma; na foto ela é obrigatória e precisa de descrição.
+  const publicId = read("image", kind === "photo");
+  const image: ImageRef | undefined = publicId
+    ? {
+        publicId,
+        alt: read("alt", kind === "photo") ?? "",
+        treatment: parseImageTreatment({ filter: read("filter"), ratio: read("ratio"), focus: read("focus") }),
+      }
+    : undefined;
+
   const base = {
     slug,
     publishedAt,
     title: read("title"),
     html: renderMarkdown(body),
+    image,
   };
 
   switch (kind) {
@@ -65,7 +80,7 @@ export function parsePost(slug: string, source: string): Post {
     case "chord":
       return { ...base, kind, chord: { name: read("chord", true)!, shape: read("shape") } };
     case "photo":
-      return { ...base, kind, image: { publicId: read("image", true)!, alt: read("alt", true)! } };
+      return { ...base, kind, image: image! };
   }
 }
 

@@ -7,6 +7,8 @@ export const site = {
   since: 2026,
   motto: "Somewhere between code, noise & underground.",
   locale: "pt-BR",
+  /** Endereço público: base dos links compartilhados e das prévias em redes sociais. */
+  url: "https://noise.discory.com.br",
 } as const;
 
 /**

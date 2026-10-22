@@ -5,7 +5,7 @@
     "singularName": "post",
     "pluralName": "posts",
     "displayName": "Registro",
-    "description": "Um registro do fluxo: texto, código, acorde ou foto. Sem categorias — o tipo muda só a forma."
+    "description": "Um registro do fluxo: texto, código, acorde ou foto. Sem categorias — a forma muda só a apresentação."
   },
   "options": {
     "draftAndPublish": true
@@ -18,7 +18,12 @@
     },
     "kind": {
       "type": "enumeration",
-      "enum": ["text", "code", "chord", "photo"],
+      "enum": [
+        "text",
+        "code",
+        "chord",
+        "photo"
+      ],
       "default": "text",
       "required": true
     },
@@ -42,7 +47,43 @@
     "image": {
       "type": "media",
       "multiple": false,
-      "allowedTypes": ["images"]
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "imageFilter": {
+      "type": "enumeration",
+      "enum": [
+        "submersa",
+        "natural",
+        "preto_e_branco",
+        "sepia",
+        "alto_contraste",
+        "vinheta"
+      ],
+      "default": "submersa"
+    },
+    "imageRatio": {
+      "type": "enumeration",
+      "enum": [
+        "original",
+        "quadrado",
+        "retrato",
+        "paisagem",
+        "panoramico"
+      ],
+      "default": "original"
+    },
+    "imageFocus": {
+      "type": "enumeration",
+      "enum": [
+        "automatico",
+        "rosto",
+        "centro",
+        "topo",
+        "base"
+      ],
+      "default": "automatico"
     }
   }
 }

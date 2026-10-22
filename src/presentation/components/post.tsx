@@ -3,7 +3,7 @@ import type { Post } from "@/core/domain/post";
 import { formatDiaryDate } from "@/presentation/format/diary-date";
 import { splitLead } from "@/presentation/format/lead";
 import { passageLabel } from "@/presentation/format/passages";
-import { SubmergedPhoto } from "./submerged-photo";
+import { PostImage } from "./post-image";
 
 /*
  * O fio: uma linha vertical que atravessa todos os registros.
@@ -126,12 +126,20 @@ export function PostBody({ post, mode }: PostBodyProps) {
   // Fora do fluxo, o texto respira mais: corpo maior, sem o cinza de resumo.
   const fullBody = inFeed ? "" : "entry-body--full";
 
+  // Imagem que acompanha um texto, um código ou um acorde: entra sob o título, sem tomar o lugar dele.
+  const cover = post.kind !== "photo" && post.image && (
+    <div className={inFeed ? "mb-5" : "mb-10"}>
+      <PostImage image={post.image} role="cover" mode={mode} />
+    </div>
+  );
+
   switch (post.kind) {
     case "text":
       // Sem título, o próprio texto é o registro e ganha mais presença.
       return (
         <article>
           {title}
+          {cover}
           {body(post.title ? fullBody : "entry-body--lead")}
           {more}
         </article>
@@ -141,6 +149,7 @@ export function PostBody({ post, mode }: PostBodyProps) {
       return (
         <article>
           {title}
+          {cover}
           {body(fullBody)}
         </article>
       );
@@ -149,6 +158,7 @@ export function PostBody({ post, mode }: PostBodyProps) {
       return (
         <article>
           {title}
+          {cover}
           <p className="mb-3 flex flex-wrap items-baseline gap-x-5 gap-y-1">
             <span className={`${inFeed ? "text-[2.75rem]" : "text-[4rem]"} leading-none font-light italic`}>
               {post.chord.name}
@@ -165,12 +175,7 @@ export function PostBody({ post, mode }: PostBodyProps) {
       return (
         <figure>
           {title}
-          <SubmergedPhoto
-            src={post.image.publicId}
-            alt={post.image.alt}
-            sizes={inFeed ? "(min-width: 640px) 28rem, 90vw" : "(min-width: 768px) 42rem, 95vw"}
-            className={`relative block aspect-4/3 w-full mask-radial-from-40% mask-radial-to-75% [--photo-strength:2] ${inFeed ? "max-w-md" : "max-w-2xl"}`}
-          />
+          <PostImage image={post.image} role="photo" mode={mode} />
           {post.html && <figcaption className="mt-2">{body("entry-body--caption")}</figcaption>}
         </figure>
       );

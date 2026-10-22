@@ -1,4 +1,5 @@
-import { InvalidPostError, POST_KINDS, type Post, type PostKind } from "@/core/domain/post";
+import { parseImageTreatment } from "@/core/domain/image-treatment";
+import { InvalidPostError, POST_KINDS, type ImageRef, type Post, type PostKind } from "@/core/domain/post";
 import { renderMarkdown } from "@/infrastructure/persistence/render-markdown";
 
 /** Um registro como a API REST do Strapi 5 devolve (formato plano, sem `attributes`). */
@@ -12,6 +13,9 @@ export type StrapiPost = {
   chordName?: string | null;
   chordShape?: string | null;
   image?: StrapiMedia | null;
+  imageFilter?: string | null;
+  imageRatio?: string | null;
+  imageFocus?: string | null;
 };
 
 type StrapiMedia = {
@@ -32,11 +36,23 @@ export function mapStrapiPost(raw: StrapiPost, timeZone: string): Post {
     throw new InvalidPostError(slug, `"kind" deve ser um de ${POST_KINDS.join(", ")}, veio "${raw.kind}"`);
   }
 
+  // O site guarda só o public_id; o loader do next/image monta a URL do Cloudinary.
+  // Fora da forma "photo", imagem sem descrição é tratada como decorativa.
+  const publicId = raw.image?.provider_metadata?.public_id;
+  const image: ImageRef | undefined = publicId
+    ? {
+        publicId,
+        alt: text(raw.image?.alternativeText) ?? "",
+        treatment: parseImageTreatment({ filter: raw.imageFilter, ratio: raw.imageRatio, focus: raw.imageFocus }),
+      }
+    : undefined;
+
   const base = {
     slug,
     publishedAt: toLocalMoment(raw.writtenAt, timeZone, slug),
     title: text(raw.title),
     html: renderMarkdown(raw.body ?? ""),
+    image,
   };
 
   switch (kind) {
@@ -49,12 +65,9 @@ export function mapStrapiPost(raw: StrapiPost, timeZone: string): Post {
       return { ...base, kind, chord: { name, shape: text(raw.chordShape) } };
     }
     case "photo": {
-      // O site guarda só o public_id; o loader do next/image monta a URL do Cloudinary.
-      const publicId = raw.image?.provider_metadata?.public_id;
-      if (!publicId) throw new InvalidPostError(slug, "foto sem imagem no Cloudinary");
-      const alt = text(raw.image?.alternativeText);
-      if (!alt) throw new InvalidPostError(slug, 'foto sem texto alternativo ("Alternative text" no painel)');
-      return { ...base, kind, image: { publicId, alt } };
+      if (!image) throw new InvalidPostError(slug, "foto sem imagem no Cloudinary");
+      if (!image.alt) throw new InvalidPostError(slug, 'foto sem texto alternativo ("Alternative text" no painel)');
+      return { ...base, kind, image };
     }
   }
 }

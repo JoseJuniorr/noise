@@ -49,6 +49,16 @@ describe("parsePost", () => {
     });
   });
 
+  it("lê capa e tratamento em qualquer forma", () => {
+    const post = parsePost("capa", file("date: 2026-10-12\nimage: noise/capa\nfilter: vinheta\nratio: retrato"));
+
+    expect(post.image).toEqual({
+      publicId: "noise/capa",
+      alt: "",
+      treatment: { filter: "vinheta", ratio: "retrato", focus: "automatico" },
+    });
+  });
+
   it("aceita quebras de linha do Windows", () => {
     expect(parsePost("crlf", "---\r\ndate: 2026-10-12\r\n---\r\nOi.\r\n").html).toBe("<p>Oi.</p>");
   });

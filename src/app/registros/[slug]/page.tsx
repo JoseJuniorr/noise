@@ -4,10 +4,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { site } from "@/config/site";
+import { cloudinaryShareImage } from "@/infrastructure/images/cloudinary-transformations";
 import { getPassageCounts } from "@/infrastructure/passages";
 import { getAllPosts, getPostBySlug } from "@/infrastructure/posts";
 import { Backdrop } from "@/presentation/components/backdrop";
 import { PassageMark } from "@/presentation/components/passage-mark";
+import { ShareLink } from "@/presentation/components/share-link";
 import {
   AFTER_THREAD,
   PostBody,
@@ -25,10 +27,20 @@ export async function generateMetadata({ params }: PageProps<"/registros/[slug]"
   if (!post) return { title: "registro não encontrado" };
 
   const description = toPlainText(post.html) || site.motto;
+  const shareImage = post.image && cloudinaryShareImage(post.image, process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME);
   return {
     title: post.title ?? postMomentLabel(post.publishedAt),
     description,
-    openGraph: { type: "article", publishedTime: post.publishedAt, description },
+    alternates: { canonical: postHref(post.slug) },
+    openGraph: {
+      type: "article",
+      url: postHref(post.slug),
+      siteName: `${site.name}.`,
+      publishedTime: post.publishedAt,
+      description,
+      images: shareImage ? [{ url: shareImage, width: 1200, height: 630, alt: post.image?.alt ?? "" }] : undefined,
+    },
+    twitter: { card: shareImage ? "summary_large_image" : "summary" },
   };
 }
 
@@ -77,9 +89,12 @@ async function PostEntry({ params }: Pick<PageProps<"/registros/[slug]">, "param
           aside={
             // "Passei por aqui" logo sob a data, à vista desde o começo da leitura.
             // A contagem muda a cada visita; o texto ao lado segue em cache.
-            <Suspense fallback={null}>
-              <Passages slug={post.slug} />
-            </Suspense>
+            <div className="space-y-5">
+              <Suspense fallback={null}>
+                <Passages slug={post.slug} />
+              </Suspense>
+              <ShareLink title={post.title ?? postMomentLabel(post.publishedAt)} path={postHref(post.slug)} />
+            </div>
           }
         />
         <div className={AFTER_THREAD}>

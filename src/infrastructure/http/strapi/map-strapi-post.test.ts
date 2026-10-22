@@ -44,6 +44,23 @@ describe("mapStrapiPost", () => {
     });
   });
 
+  it("aceita imagem em qualquer forma, com tratamento e descrição opcional", () => {
+    const post = mapStrapiPost(
+      raw({
+        image: { provider_metadata: { public_id: "noise/capa" } },
+        imageFilter: "sepia",
+        imageRatio: "panoramico",
+        imageFocus: "topo",
+      }),
+      TZ,
+    );
+    expect(post.image).toEqual({
+      publicId: "noise/capa",
+      alt: "",
+      treatment: { filter: "sepia", ratio: "panoramico", focus: "topo" },
+    });
+  });
+
   it.each<[string, Partial<StrapiPost>]>([
     ["kind desconhecido", { kind: "musica" }],
     ["data inválida", { writtenAt: "ontem" }],
