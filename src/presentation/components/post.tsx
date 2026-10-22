@@ -29,11 +29,14 @@ export function PostMoment({
   publishedAt,
   href,
   passages = 0,
+  aside,
 }: {
   publishedAt: string;
   href?: string;
   /** Marcas "passei por aqui" — aparecem só quando existem. */
   passages?: number;
+  /** Algo a mais na margem, sob a data (na página do registro: o gesto "passei por aqui"). */
+  aside?: React.ReactNode;
 }) {
   const time = publishedAt.slice(11, 16);
   const moment = (
@@ -49,7 +52,7 @@ export function PostMoment({
         aria-hidden
         className="absolute top-2.5 left-0 size-[5px] -translate-x-[2px] bg-muted transition-colors duration-700 group-hover:bg-signal sm:left-[10rem]"
       />
-      <p className="mb-3 pl-6 font-mono text-xs text-muted sm:absolute sm:top-1 sm:left-0 sm:mb-0 sm:w-[8.5rem] sm:pl-0">
+      <div className="mb-3 pl-6 font-mono text-xs text-muted sm:absolute sm:top-1 sm:left-0 sm:mb-0 sm:w-[8.5rem] sm:pl-0">
         {href ? (
           <Link href={href} className="transition-colors hover:text-ink">
             {moment}
@@ -66,7 +69,8 @@ export function PostMoment({
             <span className="sr-only">{passageLabel(passages)}</span>
           </span>
         )}
-      </p>
+        {aside && <div className="mt-3 sm:mt-6">{aside}</div>}
+      </div>
     </>
   );
 }

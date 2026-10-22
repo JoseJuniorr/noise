@@ -72,23 +72,25 @@ async function PostEntry({ params }: Pick<PageProps<"/registros/[slug]">, "param
   return (
     <>
       <div className="group relative">
-        <PostMoment publishedAt={post.publishedAt} />
+        <PostMoment
+          publishedAt={post.publishedAt}
+          aside={
+            // "Passei por aqui" logo sob a data, à vista desde o começo da leitura.
+            // A contagem muda a cada visita; o texto ao lado segue em cache.
+            <Suspense fallback={null}>
+              <Passages slug={post.slug} />
+            </Suspense>
+          }
+        />
         <div className={AFTER_THREAD}>
           <PostBody post={post} mode="full" />
         </div>
       </div>
 
-      {/* A contagem muda a cada visita; o texto acima segue em cache. */}
-      <div className={`${AFTER_THREAD} mt-16`}>
-        <Suspense fallback={null}>
-          <Passages slug={post.slug} />
-        </Suspense>
-      </div>
-
       {/* Continuar pelo fluxo: para trás no tempo, para frente, ou de volta ao começo. */}
       <nav
         aria-label="Fluxo de registros"
-        className={`${AFTER_THREAD} mt-20 grid gap-6 font-mono text-xs lowercase tracking-[0.15em] text-muted sm:grid-cols-3`}
+        className={`${AFTER_THREAD} mt-28 grid gap-6 font-mono text-xs lowercase tracking-[0.15em] text-muted sm:grid-cols-3`}
       >
         <div>{older && <FlowLink post={older} direction="older" />}</div>
         <Link href={`/#${post.slug}`} className="transition-colors hover:text-ink sm:text-center">

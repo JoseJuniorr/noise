@@ -53,23 +53,23 @@ export function PassageMark({ slug, initialCount }: Props) {
 
   if (marked) {
     return (
-      <p aria-live="polite" className="font-mono text-xs lowercase tracking-[0.15em] text-muted">
+      <p aria-live="polite" className="font-mono text-xs lowercase text-muted">
         <span className="not-italic text-signal">◼</span> {passageLabel(Math.max(count, 1))}
       </p>
     );
   }
 
   return (
-    <p className="font-mono text-xs lowercase tracking-[0.15em] text-muted">
+    <p className="font-mono text-xs lowercase text-muted">
       <button
         type="button"
         onClick={leave}
         disabled={state === "sending"}
-        className="group/mark cursor-pointer transition-colors hover:text-ink disabled:cursor-wait disabled:opacity-60"
+        className="group/mark cursor-pointer text-left transition-colors hover:text-ink disabled:cursor-wait disabled:opacity-60"
       >
         <span className="text-muted transition-colors group-hover/mark:text-signal">◼</span> passei por aqui
       </button>
-      {count > 0 && <span className="opacity-60"> · {count}</span>}
+      {count > 0 && <span className="mt-1 block opacity-60">{passageLabel(count)}</span>}
       {state === "failed" && <span className="ml-3 normal-case opacity-80">não deu agora, tente de novo.</span>}
     </p>
   );
