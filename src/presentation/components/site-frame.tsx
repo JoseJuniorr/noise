@@ -5,10 +5,15 @@ import { site } from "@/config/site";
 export function SiteFrame({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 sm:px-8">
-      <header className="py-6">
+      <header className="flex items-baseline justify-between gap-6 py-6">
         <Link href="/" className="text-lg italic tracking-tight">
           {site.author}
         </Link>
+        <nav aria-label="Principal" className="font-mono text-xs lowercase tracking-[0.14em] text-muted">
+          <Link href="/sobre" className="transition-colors hover:text-ink">
+            sobre
+          </Link>
+        </nav>
       </header>
 
       {children}
