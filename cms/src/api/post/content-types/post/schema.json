@@ -19,12 +19,12 @@
     "kind": {
       "type": "enumeration",
       "enum": [
-        "text",
-        "code",
-        "chord",
-        "photo"
+        "texto",
+        "codigo",
+        "acorde",
+        "foto"
       ],
-      "default": "text",
+      "default": "texto",
       "required": true
     },
     "title": {
@@ -37,6 +37,20 @@
     },
     "body": {
       "type": "richtext"
+    },
+    "summary": {
+      "type": "text",
+      "maxLength": 280
+    },
+    "tags": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::tag.tag",
+      "inversedBy": "posts"
+    },
+    "keywords": {
+      "type": "string",
+      "maxLength": 200
     },
     "chordName": {
       "type": "string"

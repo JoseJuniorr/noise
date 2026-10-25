@@ -8,6 +8,8 @@ const post = (slug: string, publishedAt: string): Post => ({
   publishedAt,
   kind: "text",
   html: `<p>${slug}</p>`,
+  tags: [],
+  keywords: [],
 });
 
 /** Adaptador em memória: prova que o caso de uso não depende de onde os dados vêm. */

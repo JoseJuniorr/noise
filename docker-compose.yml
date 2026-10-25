@@ -58,6 +58,9 @@ services:
       REVALIDATE_SECRET: ${REVALIDATE_SECRET:?defina REVALIDATE_SECRET no .env}
       # Marcas "passei por aqui": mesmo Postgres, schema próprio (noise).
       PASSAGES_DATABASE_URL: postgres://strapi:${POSTGRES_PASSWORD}@postgres:5432/strapi
+      # Acesso de administrador às ferramentas de arte (/entrar).
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?defina ADMIN_PASSWORD no .env}
+      ADMIN_SESSION_SECRET: ${ADMIN_SESSION_SECRET:?defina ADMIN_SESSION_SECRET no .env}
 
   caddy:
     image: caddy:2-alpine

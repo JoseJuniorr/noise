@@ -87,8 +87,13 @@ export function PostBody({ post, mode }: PostBodyProps) {
   const inFeed = mode === "feed";
 
   // No fluxo, um texto com título é um texto longo: aparece a abertura e o convite para continuar.
+  // Com resumo, ele substitui a abertura no fluxo; sem, vale o primeiro parágrafo.
   const { lead, hasMore } =
-    inFeed && post.kind === "text" && post.title ? splitLead(post.html) : { lead: post.html, hasMore: false };
+    inFeed && post.kind === "text" && post.title
+      ? post.summary
+        ? { lead: `<p>${escapeHtml(post.summary)}</p>`, hasMore: true }
+        : splitLead(post.html)
+      : { lead: post.html, hasMore: false };
 
   // HTML entregue pelo adaptador (Markdown hoje, Strapi amanhã) — conteúdo autoral.
   const body = (variant = "") => (
@@ -181,3 +186,6 @@ export function PostBody({ post, mode }: PostBodyProps) {
       );
   }
 }
+
+const escapeHtml = (text: string) =>
+  text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");

@@ -1,6 +1,7 @@
 import { parse as parseYaml } from "yaml";
 import { parseImageTreatment } from "@/core/domain/image-treatment";
-import { InvalidPostError, POST_KINDS, type ImageRef, type Post, type PostKind } from "@/core/domain/post";
+import { InvalidPostError, parseKind, POST_KINDS, type ImageRef, type Post } from "@/core/domain/post";
+import { splitList, toTags } from "@/core/domain/tag";
 import { renderMarkdown } from "../render-markdown";
 
 const FRONT_MATTER = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/;
@@ -20,6 +21,9 @@ const PUBLISHED_AT = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$/;
  * filter: sepia        # submersa (padrão) | natural | preto_e_branco | sepia | alto_contraste | vinheta
  * ratio: quadrado      # original (padrão) | quadrado | retrato | paisagem | panoramico
  * focus: rosto         # automatico (padrão) | rosto | centro | topo | base
+ * summary: uma frase   # opcional: resumo para o fluxo, as artes e os buscadores
+ * tags: [música, ao vivo]          # assuntos visíveis, que levam à busca
+ * keywords: show, setlist         # só para a busca, não aparecem
  * ---
  * Corpo em Markdown.
  * ```
@@ -50,10 +54,18 @@ export function parsePost(slug: string, source: string): Post {
     throw new InvalidPostError(slug, `"date" deve ser AAAA-MM-DD ou AAAA-MM-DDTHH:MM, veio "${publishedAt}"`);
   }
 
-  const kind = (read("kind") ?? "text") as PostKind;
-  if (!POST_KINDS.includes(kind)) {
-    throw new InvalidPostError(slug, `"kind" deve ser um de ${POST_KINDS.join(", ")}, veio "${kind}"`);
+  const rawKind = read("kind") ?? "text";
+  const kind = parseKind(rawKind);
+  if (!kind) {
+    throw new InvalidPostError(slug, `"kind" deve ser um de ${POST_KINDS.join(", ")} (ou texto, codigo, acorde, foto), veio "${rawKind}"`);
   }
+
+  // Listas aceitam YAML ([a, b]) ou texto separado por vírgula ("a, b").
+  const readList = (field: string): string[] => {
+    const value = meta[field];
+    if (Array.isArray(value)) return splitList(value.map(String));
+    return splitList(typeof value === "string" ? value : undefined);
+  };
 
   // Imagem em qualquer forma; na foto ela é obrigatória e precisa de descrição.
   const publicId = read("image", kind === "photo");
@@ -71,6 +83,9 @@ export function parsePost(slug: string, source: string): Post {
     title: read("title"),
     html: renderMarkdown(body),
     image,
+    summary: read("summary"),
+    tags: toTags(readList("tags")),
+    keywords: readList("keywords"),
   };
 
   switch (kind) {

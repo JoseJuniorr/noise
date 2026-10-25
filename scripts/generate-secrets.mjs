@@ -22,6 +22,9 @@ const GENERATORS = {
   JWT_SECRET: secret,
   ENCRYPTION_KEY: secret,
   REVALIDATE_SECRET: secret,
+  // Senha de /entrar (guarde num gerenciador de senhas) e o segredo que assina a sessão.
+  ADMIN_PASSWORD: () => randomBytes(18).toString("base64url"),
+  ADMIN_SESSION_SECRET: secret,
 };
 
 const file = process.argv[2] ?? ".env";

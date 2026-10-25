@@ -1,5 +1,6 @@
 import { parseImageTreatment } from "@/core/domain/image-treatment";
-import { InvalidPostError, POST_KINDS, type ImageRef, type Post, type PostKind } from "@/core/domain/post";
+import { InvalidPostError, parseKind, POST_KINDS, type ImageRef, type Post } from "@/core/domain/post";
+import { splitList, toTags } from "@/core/domain/tag";
 import { renderMarkdown } from "@/infrastructure/persistence/render-markdown";
 
 /** Um registro como a API REST do Strapi 5 devolve (formato plano, sem `attributes`). */
@@ -16,6 +17,10 @@ export type StrapiPost = {
   imageFilter?: string | null;
   imageRatio?: string | null;
   imageFocus?: string | null;
+  summary?: string | null;
+  /** Palavras-chave separadas por vírgula. */
+  keywords?: string | null;
+  tags?: { name?: string | null }[] | null;
 };
 
 type StrapiMedia = {
@@ -31,8 +36,9 @@ export function mapStrapiPost(raw: StrapiPost, timeZone: string): Post {
   const { slug } = raw;
   const text = (value: string | null | undefined) => value?.trim() || undefined;
 
-  const kind = raw.kind as PostKind;
-  if (!POST_KINDS.includes(kind)) {
+  // O CMS usa os nomes em português (texto, codigo, acorde, foto); aceita também os antigos.
+  const kind = parseKind(raw.kind);
+  if (!kind) {
     throw new InvalidPostError(slug, `"kind" deve ser um de ${POST_KINDS.join(", ")}, veio "${raw.kind}"`);
   }
 
@@ -53,6 +59,9 @@ export function mapStrapiPost(raw: StrapiPost, timeZone: string): Post {
     title: text(raw.title),
     html: renderMarkdown(raw.body ?? ""),
     image,
+    summary: text(raw.summary),
+    tags: toTags((raw.tags ?? []).map((tag) => tag.name ?? "")),
+    keywords: splitList(raw.keywords),
   };
 
   switch (kind) {

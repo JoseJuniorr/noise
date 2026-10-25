@@ -40,7 +40,15 @@ type PostBase = {
   html: string;
   /** Imagem do registro, em qualquer forma; na forma "photo" ela é o próprio registro. */
   image?: ImageRef;
+  /** Uma ou duas frases escritas para resumir: usadas no fluxo, nas artes e nos buscadores. */
+  summary?: string;
+  /** Assuntos que aparecem no registro e levam à busca. Não são categorias: um registro tem quantos quiser. */
+  tags: Tag[];
+  /** Palavras que ajudam a encontrar o registro na busca, sem aparecer na página. */
+  keywords: string[];
 };
+
+export type Tag = { name: string; slug: string };
 
 /**
  * O `kind` muda só a forma de mostrar o registro; nunca vira categoria ou rótulo.
@@ -57,6 +65,15 @@ export type Post = PostBase &
 export type PostKind = Post["kind"];
 
 export const POST_KINDS = ["text", "code", "chord", "photo"] as const satisfies readonly PostKind[];
+
+/** Nomes em português usados no CMS e nos arquivos → a forma no domínio. */
+const KIND_ALIASES: Record<string, PostKind> = { texto: "text", codigo: "code", acorde: "chord", foto: "photo" };
+
+/** Forma a partir do nome em português ou em inglês; desconhecida vira undefined. */
+export function parseKind(value: string | null | undefined): PostKind | undefined {
+  const key = (value ?? "").trim().toLowerCase();
+  return KIND_ALIASES[key] ?? (POST_KINDS as readonly string[]).find((kind) => kind === key) as PostKind | undefined;
+}
 
 export class InvalidPostError extends Error {
   constructor(slug: string, reason: string) {

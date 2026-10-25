@@ -20,6 +20,21 @@ describe("mapStrapiPost", () => {
       title: undefined,
       kind: "text",
       html: "<p>Um <em>caderno</em> aberto.</p>",
+      tags: [],
+      keywords: [],
+    });
+  });
+
+  it("lê a forma em português, o resumo, as tags e as palavras-chave", () => {
+    const post = mapStrapiPost(
+      raw({ kind: "acorde", chordName: "E7(9)", summary: " Um acorde. ", keywords: "jazz, domingo", tags: [{ name: "Música" }, { name: "música" }] }),
+      TZ,
+    );
+    expect(post).toMatchObject({
+      kind: "chord",
+      summary: "Um acorde.",
+      keywords: ["jazz", "domingo"],
+      tags: [{ name: "Música", slug: "musica" }],
     });
   });
 

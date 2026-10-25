@@ -4,10 +4,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { site } from "@/config/site";
-import { getPassageCounts } from "@/infrastructure/passages";
+import { isAdmin } from "@/infrastructure/admin/admin";
+import { getPassageInfo } from "@/infrastructure/passages";
 import { getAllPosts, getPostBySlug } from "@/infrastructure/posts";
 import { Backdrop } from "@/presentation/components/backdrop";
-import { PassageMark } from "@/presentation/components/passage-mark";
+import { PassageForm } from "@/presentation/components/passage/passage-form";
+import { PassageSummary } from "@/presentation/components/passage/passage-summary";
+import { PostTags } from "@/presentation/components/post-tags";
+import { logout } from "@/app/entrar/actions";
 import { ShareArt } from "@/presentation/components/share-art";
 import { ShareLink } from "@/presentation/components/share-link";
 import {
@@ -26,7 +30,7 @@ export async function generateMetadata({ params }: PageProps<"/registros/[slug]"
   const post = await getPostBySlug(slug);
   if (!post) return { title: "registro não encontrado" };
 
-  const description = toPlainText(post.html) || site.motto;
+  const description = post.summary ?? (toPlainText(post.html) || site.motto);
   return {
     title: post.title ?? postMomentLabel(post.publishedAt),
     description,
@@ -86,23 +90,30 @@ async function PostEntry({ params }: Pick<PageProps<"/registros/[slug]">, "param
         <PostMoment
           publishedAt={post.publishedAt}
           aside={
-            // "Passei por aqui" logo sob a data, à vista desde o começo da leitura.
+            // Sob a data: quantos passaram e um atalho até o convite no fim do texto.
             // A contagem muda a cada visita; o texto ao lado segue em cache.
             <div className="space-y-5">
               <Suspense fallback={null}>
                 <Passages slug={post.slug} />
               </Suspense>
               <ShareLink title={post.title ?? postMomentLabel(post.publishedAt)} path={postHref(post.slug)} />
-              <ShareArt
-                slug={post.slug}
-                title={post.title ?? postMomentLabel(post.publishedAt)}
-                path={postHref(post.slug)}
-              />
+              {/* Ferramentas de arte: só para o administrador, lidas do cookie no acesso. */}
+              <Suspense fallback={null}>
+                <AdminTools
+                  slug={post.slug}
+                  title={post.title ?? postMomentLabel(post.publishedAt)}
+                  path={postHref(post.slug)}
+                />
+              </Suspense>
             </div>
           }
         />
         <div className={AFTER_THREAD}>
           <PostBody post={post} mode="full" />
+          <PostTags tags={post.tags} />
+          <Suspense fallback={null}>
+            <PassageInvite slug={post.slug} />
+          </Suspense>
         </div>
       </div>
 
@@ -125,8 +136,29 @@ async function PostEntry({ params }: Pick<PageProps<"/registros/[slug]">, "param
 /** "Passei por aqui" — a contagem é lida no acesso, fora do cache do registro. */
 async function Passages({ slug }: { slug: string }) {
   await connection();
-  const counts = await getPassageCounts([slug]);
-  return <PassageMark slug={slug} initialCount={counts[slug] ?? 0} />;
+  const { count, names } = await getPassageInfo(slug);
+  return <PassageSummary slug={slug} initialCount={count} initialNames={names} />;
+}
+
+/** O convite no fim do texto: depois de ler, o lugar natural para deixar uma marca. */
+async function PassageInvite({ slug }: { slug: string }) {
+  await connection();
+  const { count, names } = await getPassageInfo(slug);
+  return <PassageForm slug={slug} initialCount={count} initialNames={names} />;
+}
+
+async function AdminTools(props: { slug: string; title: string; path: string }) {
+  if (!(await isAdmin())) return null;
+  return (
+    <div className="space-y-3">
+      <ShareArt {...props} />
+      <form action={logout}>
+        <button type="submit" className="cursor-pointer font-mono text-xs lowercase text-muted/60 transition-colors hover:text-ink">
+          sair
+        </button>
+      </form>
+    </div>
+  );
 }
 
 function FlowLink({

@@ -49,7 +49,9 @@ export class StrapiPostRepository implements PostRepository {
 
   private async request(params: Record<string, string>): Promise<Page> {
     const url = new URL("/api/posts", this.options.baseUrl);
-    url.searchParams.set("populate", "image");
+    // Relações que o fluxo usa: a imagem e as tags (só o nome).
+    url.searchParams.set("populate[image]", "true");
+    url.searchParams.set("populate[tags][fields][0]", "name");
     url.searchParams.set("pagination[pageSize]", String(PAGE_SIZE));
     for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
 

@@ -81,7 +81,8 @@ export async function renderPostArt(post: Post, format: ArtFormat, headers?: Rec
 
   // O texto mantém seus parágrafos; só o último que couber é cortado.
   const budget = { stories: 260, feed: 170, og: 120 }[format];
-  const paragraphs = leadParagraphs(post.html, budget);
+  // O resumo, quando existe, foi escrito para isto: entra no lugar do começo do texto.
+  const paragraphs = post.summary ? [toPlainText(post.summary, budget)] : leadParagraphs(post.html, budget);
   const isChordHeadline = !post.title && post.kind === "chord";
   // O que ocupa o lugar do título: o título, o acorde, ou o primeiro parágrafo do texto.
   const headline =

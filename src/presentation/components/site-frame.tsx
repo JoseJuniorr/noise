@@ -9,7 +9,10 @@ export function SiteFrame({ children }: { children: React.ReactNode }) {
         <Link href="/" className="text-lg italic tracking-tight">
           {site.author}
         </Link>
-        <nav aria-label="Principal" className="font-mono text-xs lowercase tracking-[0.14em] text-muted">
+        <nav aria-label="Principal" className="flex gap-5 font-mono text-xs lowercase tracking-[0.14em] text-muted">
+          <Link href="/busca" className="transition-colors hover:text-ink">
+            buscar
+          </Link>
           <Link href="/sobre" className="transition-colors hover:text-ink">
             sobre
           </Link>

@@ -1,5 +1,7 @@
 import { Suspense, type CSSProperties } from "react";
 import { connection } from "next/server";
+import Link from "next/link";
+import { about } from "@/config/about";
 import { site } from "@/config/site";
 import { getPassageCounts } from "@/infrastructure/passages";
 import { getAllPosts } from "@/infrastructure/posts";
@@ -25,6 +27,13 @@ export default function Home() {
               {/* O ponto é uma luz de gravação, respirando no vermelho da paleta. */}
               <span className="motto-mark not-italic text-signal">.</span>
             </h1>
+            {/* Quem escreve: discreto, na margem do caderno, levando à página inteira. */}
+            <p className="mt-6 max-w-[34ch] pl-6 font-mono text-xs leading-relaxed text-muted sm:absolute sm:bottom-24 sm:left-0 sm:mt-0 sm:w-[8.5rem] sm:pl-0">
+              <span className="normal-case">{about.teaser}</span>{" "}
+              <Link href="/sobre" className="mt-2 inline-block lowercase text-ink/80 transition-colors hover:text-signal sm:block">
+                quem escreve →
+              </Link>
+            </p>
             {/* O fio começa aqui, logo abaixo da frase. */}
             <span
               aria-hidden

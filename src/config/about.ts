@@ -16,6 +16,9 @@ export type Project = {
 };
 
 export const about = {
+  /** Nota curta na home, ao lado do noise. — o convite para a página inteira. */
+  teaser: "Engenheiro de software e músico. Escrevo sobre código, discos, palco e o que vem ao coração.",
+
   /** Quem escreve: abre a página, em parágrafos curtos. */
   intro: [
     "Engenheiro de software e músico.",

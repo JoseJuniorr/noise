@@ -1,17 +1,28 @@
 import { describe, expect, it } from "vitest";
 import { passageLabel } from "@/presentation/format/passages";
-import { InMemoryPassageRepository } from "./persistence/in-memory-passage-repository";
+import { emptyPassageStore, InMemoryPassageRepository } from "./persistence/in-memory-passage-repository";
 import { createRateLimiter } from "./rate-limit";
 
 describe("InMemoryPassageRepository", () => {
   it("soma marcas por registro e devolve só os que têm marca", async () => {
-    const repository = new InMemoryPassageRepository(new Map());
+    const repository = new InMemoryPassageRepository(emptyPassageStore());
 
     expect(await repository.add("dadd9")).toBe(1);
     expect(await repository.add("dadd9")).toBe(2);
     expect(await repository.add("outro")).toBe(1);
 
     expect(await repository.counts(["dadd9", "outro", "vazio"])).toEqual({ dadd9: 2, outro: 1 });
+  });
+
+  it("guarda nomes opcionais, do mais recente ao mais antigo", async () => {
+    const repository = new InMemoryPassageRepository(emptyPassageStore());
+    await repository.add("r", "Ana");
+    await repository.add("r");
+    await repository.add("r", "Pedro");
+
+    expect(await repository.counts(["r"])).toEqual({ r: 3 });
+    expect(await repository.recentNames("r", 5)).toEqual(["Pedro", "Ana"]);
+    expect(await repository.recentNames("r", 1)).toEqual(["Pedro"]);
   });
 });
 

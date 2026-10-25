@@ -14,6 +14,8 @@ describe("parsePost", () => {
       title: undefined,
       kind: "text",
       html: "<p>Um <em>caderno</em> aberto.</p>",
+      tags: [],
+      keywords: [],
     });
   });
 

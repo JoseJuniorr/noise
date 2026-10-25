@@ -1,11 +1,17 @@
+import { isAdmin } from "@/infrastructure/admin/admin";
 import { getPostBySlug } from "@/infrastructure/posts";
 import { isArtFormat, renderPostArt } from "@/presentation/og/post-art";
 
 /**
  * Arte pronta de um registro: /registros/<slug>/arte/stories | feed | og.
- * PNG gerado sob demanda; o texto do registro vem do cache, então gerar é barato.
+ * Só para o administrador: gerar a imagem custa CPU do servidor, e o público
+ * já tem a prévia de link (opengraph-image), que fica aberta para as redes.
  */
 export async function GET(_request: Request, { params }: RouteContext<"/registros/[slug]/arte/[formato]">) {
+  if (!(await isAdmin())) {
+    return new Response("acesso restrito", { status: 401 });
+  }
+
   const { slug, formato } = await params;
   if (!isArtFormat(formato)) {
     return new Response("formato desconhecido (use stories, feed ou og)", { status: 404 });
@@ -16,7 +22,7 @@ export async function GET(_request: Request, { params }: RouteContext<"/registro
 
   return renderPostArt(post, formato, {
     "Content-Disposition": `inline; filename="noise-${slug}-${formato}.png"`,
-    // Uma edição no CMS aparece na arte em até 10 minutos.
-    "Cache-Control": "public, max-age=600",
+    // Particular (só existe para quem está logado); uma edição no CMS chega à arte em até 10 minutos.
+    "Cache-Control": "private, max-age=600",
   });
 }

@@ -24,15 +24,36 @@ export class PostgresPassageRepository implements PassageRepository {
     return Object.fromEntries(rows.map((row) => [row.slug, row.count]));
   }
 
-  async add(slug: string): Promise<number> {
+  async add(slug: string, name?: string): Promise<number> {
     await this.ensureSchema();
-    const { rows } = await this.pool.query<{ count: number }>(
-      `insert into noise.passages (slug, count) values ($1, 1)
-       on conflict (slug) do update set count = noise.passages.count + 1, updated_at = now()
-       returning count`,
-      [slug],
+    const client = await this.pool.connect();
+    try {
+      // Contagem e nome juntos: ou entram os dois, ou nenhum.
+      await client.query("begin");
+      const { rows } = await client.query<{ count: number }>(
+        `insert into noise.passages (slug, count) values ($1, 1)
+         on conflict (slug) do update set count = noise.passages.count + 1, updated_at = now()
+         returning count`,
+        [slug],
+      );
+      if (name) await client.query("insert into noise.passage_names (slug, name) values ($1, $2)", [slug, name]);
+      await client.query("commit");
+      return rows[0].count;
+    } catch (error) {
+      await client.query("rollback");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async recentNames(slug: string, limit: number): Promise<string[]> {
+    await this.ensureSchema();
+    const { rows } = await this.pool.query<{ name: string }>(
+      "select name from noise.passage_names where slug = $1 order by created_at desc, id desc limit $2",
+      [slug, limit],
     );
-    return rows[0].count;
+    return rows.map((row) => row.name);
   }
 
   /** Cria o schema e a tabela na primeira vez; depois é só a promessa já resolvida. */
@@ -44,7 +65,14 @@ export class PostgresPassageRepository implements PassageRepository {
            slug text primary key,
            count integer not null default 0,
            updated_at timestamptz not null default now()
-         );`,
+         );
+         create table if not exists noise.passage_names (
+           id bigserial primary key,
+           slug text not null,
+           name text not null,
+           created_at timestamptz not null default now()
+         );
+         create index if not exists passage_names_slug_idx on noise.passage_names (slug, created_at desc);`,
       )
       .then(() => undefined)
       .catch((error) => {

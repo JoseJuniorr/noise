@@ -44,7 +44,8 @@ describe("StrapiPostRepository", () => {
     expect(slugs).toEqual(["um", "dois", "tres"]);
     expect(requested).toHaveLength(2);
     expect(requested[0].pathname).toBe("/api/posts");
-    expect(requested[0].searchParams.get("populate")).toBe("image");
+    expect(requested[0].searchParams.get("populate[image]")).toBe("true");
+    expect(requested[0].searchParams.get("populate[tags][fields][0]")).toBe("name");
   });
 
   it("deixa de fora um registro inválido sem derrubar o fluxo", async () => {
