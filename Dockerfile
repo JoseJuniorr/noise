@@ -22,6 +22,8 @@ ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
 COPY --from=build --chown=node:node /app/.next/standalone ./
 COPY --from=build --chown=node:node /app/.next/static ./.next/static
 COPY --from=build --chown=node:node /app/public ./public
+# Fontes das artes de compartilhamento (lidas do disco pelo ImageResponse).
+COPY --from=build --chown=node:node /app/assets ./assets
 # Registros em Markdown: usados quando CONTENT_SOURCE=markdown.
 COPY --from=build --chown=node:node /app/content ./content
 USER node

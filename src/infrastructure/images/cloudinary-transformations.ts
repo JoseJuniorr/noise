@@ -43,13 +43,20 @@ export function cloudinarySrc(image: ImageRef): string {
 }
 
 /**
- * URL absoluta de prévia para redes sociais (Open Graph, 1200×630), cortada
- * pelo foco do tratamento. Imagens locais e Cloudinary sem configuração não têm prévia.
+ * URL absoluta de uma imagem para as artes de compartilhamento, já no tamanho
+ * da arte e cortada pelo foco do tratamento. A versão "submersa" do site é CSS;
+ * aqui ela vira efeitos do próprio Cloudinary (P&B, contraste, mais escura).
+ * Caminhos locais são servidos pelo próprio site.
  */
-export function cloudinaryShareImage(image: ImageRef, cloudName: string | undefined): string | undefined {
-  if (!cloudName || image.publicId.startsWith("/")) return undefined;
-  const gravity = GRAVITY[(image.treatment ?? DEFAULT_TREATMENT).focus];
-  const effect = EFFECTS[(image.treatment ?? DEFAULT_TREATMENT).filter];
-  const steps = [`c_fill,w_1200,h_630,${gravity}`, effect, "f_jpg,q_auto"].filter(Boolean).join("/");
-  return `https://res.cloudinary.com/${cloudName}/image/upload/${steps}/${image.publicId}`;
+export function cloudinaryArtImage(
+  image: ImageRef,
+  { cloudName, siteUrl, width, height }: { cloudName: string | undefined; siteUrl: string; width: number; height: number },
+): string | undefined {
+  if (image.publicId.startsWith("/")) return new URL(image.publicId, siteUrl).toString();
+  if (!cloudName) return undefined;
+
+  const { filter, focus } = image.treatment ?? DEFAULT_TREATMENT;
+  const effects = filter === "submersa" ? ["e_grayscale", "e_contrast:30", "e_brightness:-15"] : [EFFECTS[filter]];
+  const steps = [`c_fill,w_${width},h_${height},${GRAVITY[focus]}`, ...effects, "f_jpg,q_auto"].filter(Boolean);
+  return `https://res.cloudinary.com/${cloudName}/image/upload/${steps.join("/")}/${image.publicId}`;
 }
