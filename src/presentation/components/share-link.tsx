@@ -1,45 +1,55 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
+import { copyText } from "./clipboard";
 
 type Props = { title: string; path: string };
 
-/**
- * Compartilhar um registro. No celular abre a folha do sistema (WhatsApp,
- * Instagram…); onde ela não existe, copia o link.
- */
-export function ShareLink({ title, path }: Props) {
-  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
+const noop = () => () => {};
+// Folha de compartilhamento do sistema: existe no celular e em alguns desktops.
+const canShareLinks = () => typeof navigator.share === "function";
 
-  async function share() {
-    const url = new URL(path, window.location.origin).toString();
+/** Compartilhar o link do registro e copiá-lo — com retorno honesto sobre a cópia. */
+export function ShareLink({ title, path }: Props) {
+  const hasShareSheet = useSyncExternalStore(noop, canShareLinks, () => false);
+  const [copy, setCopy] = useState<"idle" | "copied" | "failed">("idle");
+  const url = () => new URL(path, window.location.origin).toString();
+
+  async function onCopy() {
+    // Nada de await antes da cópia: o navegador só a permite logo após o toque.
+    const ok = await copyText(url());
+    setCopy(ok ? "copied" : "failed");
+    if (ok) setTimeout(() => setCopy("idle"), 2500);
+  }
+
+  async function onShare() {
     try {
-      if (navigator.share) {
-        await navigator.share({ title, url });
-        return;
-      }
-      await navigator.clipboard.writeText(url);
-      setState("copied");
-      setTimeout(() => setState("idle"), 2500);
-    } catch (error) {
-      // Fechar a folha de compartilhamento não é erro.
-      if ((error as DOMException)?.name !== "AbortError") setState("failed");
+      await navigator.share({ title, url: url() });
+    } catch {
+      // Fechar a folha não é erro; se o sistema recusar, ainda há "copiar link".
     }
   }
 
+  const button = "group/share cursor-pointer text-left transition-colors hover:text-ink";
+  const mark = "transition-colors group-hover/share:text-signal";
+
   return (
-    <p className="font-mono text-xs lowercase text-muted">
-      <button
-        type="button"
-        onClick={share}
-        className="group/share cursor-pointer text-left transition-colors hover:text-ink"
-      >
-        <span className="transition-colors group-hover/share:text-signal">↗</span> compartilhar
+    <div className="space-y-2 font-mono text-xs lowercase text-muted">
+      {hasShareSheet && (
+        <button type="button" onClick={onShare} className={`block ${button}`}>
+          <span className={mark}>↗</span> compartilhar
+        </button>
+      )}
+      <button type="button" onClick={onCopy} className={`block ${button}`}>
+        <span className={mark}>⧉</span> copiar link
       </button>
-      <span aria-live="polite" className="mt-1 block opacity-60">
-        {state === "copied" && "link copiado"}
-        {state === "failed" && "não deu para copiar"}
-      </span>
-    </p>
+      <p aria-live="polite" className="opacity-60">
+        {copy === "copied" && "link copiado"}
+        {copy === "failed" && (
+          // Sem permissão de cópia: o endereço fica à mão para copiar manualmente.
+          <span className="block normal-case select-all break-all">{url()}</span>
+        )}
+      </p>
+    </div>
   );
 }

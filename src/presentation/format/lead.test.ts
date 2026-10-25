@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { splitLead, toPlainText } from "./lead";
+import { leadParagraphs, splitLead, toPlainText } from "./lead";
 
 describe("splitLead", () => {
   it("separa o primeiro parágrafo e avisa que há mais", () => {
@@ -31,5 +31,22 @@ describe("toPlainText", () => {
 
   it("corta numa palavra inteira", () => {
     expect(toPlainText("<p>abrir um caderno em branco</p>", 14)).toBe("abrir um…");
+  });
+});
+
+describe("leadParagraphs", () => {
+  it("mantém os parágrafos separados enquanto cabem", () => {
+    expect(leadParagraphs("<p>Um.</p>\n<p>Dois.</p>", 100)).toEqual(["Um.", "Dois."]);
+  });
+
+  it("corta só o último parágrafo, numa palavra inteira", () => {
+    const html = "<p>" + "a ".repeat(40).trim() + "</p><p>" + "palavra ".repeat(30).trim() + "</p>";
+    const result = leadParagraphs(html, 150);
+    expect(result).toHaveLength(2);
+    expect(result[1].endsWith("…")).toBe(true);
+  });
+
+  it("não começa um parágrafo novo para mostrar só um fiapo", () => {
+    expect(leadParagraphs("<p>" + "x".repeat(90) + "</p><p>outro parágrafo comprido o bastante</p>", 100)).toEqual(["x".repeat(90)]);
   });
 });

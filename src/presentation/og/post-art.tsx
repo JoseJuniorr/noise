@@ -5,7 +5,7 @@ import { site } from "@/config/site";
 import type { Post } from "@/core/domain/post";
 import { cloudinaryArtImage } from "@/infrastructure/images/cloudinary-transformations";
 import { formatDiaryDate } from "@/presentation/format/diary-date";
-import { toPlainText } from "@/presentation/format/lead";
+import { leadParagraphs, toPlainText } from "@/presentation/format/lead";
 
 /**
  * Artes de compartilhamento de um registro, no layout do noise.: a imagem do
@@ -54,10 +54,8 @@ function loadFonts() {
 /** Endereço curto do registro, como aparece impresso na arte. */
 export const shortPostUrl = (slug: string) => `${new URL(site.url).host}/registros/${slug}`;
 
-function momentLabel(publishedAt: string): string {
-  const time = publishedAt.slice(11, 16);
-  return `${formatDiaryDate(publishedAt.slice(0, 10))}${time ? ` · ${time}` : ""}`;
-}
+// Na arte vai só a data: a hora é detalhe do caderno, não do convite.
+const dateLabel = (publishedAt: string) => formatDiaryDate(publishedAt.slice(0, 10));
 
 /** O título encolhe com o tamanho: frase curta é grande, frase longa respira. */
 function titleSize(text: string, format: ArtFormat): number {
@@ -81,18 +79,21 @@ export async function renderPostArt(post: Post, format: ArtFormat, headers?: Rec
       height: spec.imageHeight,
     });
 
-  const plain = toPlainText(post.html, format === "stories" ? 230 : format === "feed" ? 150 : 120);
-  // O que ocupa o lugar do título: o título, o acorde, ou o próprio começo do texto.
-  const headline = post.title ?? (post.kind === "chord" ? post.chord.name : plain);
-  const showExcerpt = Boolean(post.title || post.kind === "chord") && plain.length > 0;
+  // O texto mantém seus parágrafos; só o último que couber é cortado.
+  const budget = { stories: 260, feed: 170, og: 120 }[format];
+  const paragraphs = leadParagraphs(post.html, budget);
   const isChordHeadline = !post.title && post.kind === "chord";
+  // O que ocupa o lugar do título: o título, o acorde, ou o primeiro parágrafo do texto.
+  const headline =
+    post.title ?? (isChordHeadline ? post.chord.name : toPlainText(paragraphs[0] ?? "", { stories: 160, feed: 120, og: 100 }[format]));
+  const excerpt = post.title || isChordHeadline ? paragraphs : paragraphs.slice(1);
 
   const content = (
     <div style={{ display: "flex", flexDirection: "column", gap: horizontal ? 18 : 28 }}>
       {/* Margem do caderno: o ponto sobre o fio e o instante. */}
       <div style={{ display: "flex", alignItems: "center", gap: 18, fontFamily: "Plex Mono", fontSize: horizontal ? 20 : 28, color: MUTED }}>
         <div style={{ width: horizontal ? 7 : 9, height: horizontal ? 7 : 9, background: SIGNAL }} />
-        {momentLabel(post.publishedAt)}
+        {dateLabel(post.publishedAt)}
       </div>
 
       <div
@@ -115,17 +116,23 @@ export async function renderPostArt(post: Post, format: ArtFormat, headers?: Rec
         </div>
       )}
 
-      {showExcerpt && (
+      {excerpt.length > 0 && (
         <div
           style={{
             display: "flex",
+            flexDirection: "column",
+            gap: horizontal ? 10 : format === "stories" ? 24 : 18,
             fontFamily: post.kind === "code" ? "Plex Mono" : "Newsreader",
-            fontSize: horizontal ? 24 : format === "stories" ? 40 : 34,
+            fontSize: horizontal ? 24 : format === "stories" ? 38 : 32,
             lineHeight: 1.45,
             color: MUTED,
           }}
         >
-          {plain}
+          {excerpt.map((paragraph, index) => (
+            <div key={index} style={{ display: "flex" }}>
+              {paragraph}
+            </div>
+          ))}
         </div>
       )}
     </div>
